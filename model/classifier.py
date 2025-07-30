@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
-import scipy.io
 import json
 import os
+import random  # для заглушки
 
-LABELS_FILE = "data/flowers/imagelabels.mat"
-CAT_TO_NAME = "data/cat_to_name.json"
+MODEL_PATH = "model/model.pth"
+INFO_PATH = "data/plants_info.json"
 
 transform = transforms.Compose([
     transforms.Resize(256),
@@ -16,31 +16,50 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-with open(CAT_TO_NAME, 'r', encoding='utf-8') as f:
-    cat_to_name = json.load(f)
+with open(INFO_PATH, "r", encoding="utf-8") as f:
+    plant_info = json.load(f)
 
-def create_model():
-    model = models.resnet18(pretrained=True)
-    model.fc = nn.Linear(model.fc.in_features, 102)
+plant_names = list(plant_info.keys())
 
+def create_model(num_classes):
+    model = models.resnet18(pretrained=False)
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
     return model
 
-model = create_model()
-model.eval()
+num_classes = len(plant_info)
+model = create_model(num_classes)
+model_loaded = False
+
+try:
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+    model.eval()
+    model_loaded = True
+    print("✅ Модель загружена.")
+except FileNotFoundError:
+    print("⚠️ Файл модели model.pth не найден. Работаю в режиме заглушки.")
+except Exception as e:
+    print(f"⚠️ Ошибка загрузки модели: {e}. Работаю в режиме заглушки.")
 
 def predict(image_path):
-    try:
-        image = Image.open(image_path).convert("RGB")
-        image_t = transform(image).unsqueeze(0)
+    if model_loaded:
+        try:
+            image = Image.open(image_path).convert("RGB")
+            image_t = transform(image).unsqueeze(0)
 
-        with torch.no_grad():
-            outputs = model(image_t)
-            _, predicted = torch.max(outputs, 1)
-            class_id = str(predicted.item() + 1)
+            with torch.no_grad():
+                outputs = model(image_t)
+                _, predicted = torch.max(outputs, 1)
+                class_idx = predicted.item()
+                class_name = list(plant_info.keys())[class_idx]
 
-        common_name = cat_to_name.get(class_id, "неизвестный цветок")
-        scientific_name = f"Species_{class_id}"
-        return common_name, scientific_name
-    except Exception as e:
-        print(f"Ошибка при предсказании: {e}")
-        return "не удалось распознать", None
+            return class_name, plant_info[class_name]["latin"]
+        except Exception as e:
+            print(f"Ошибка при предсказании: {e}")
+            return None, None
+    else:
+        try:
+            predicted_name = random.choice(plant_names)
+            return predicted_name, plant_info[predicted_name]["latin"]
+        except Exception as e:
+            print(f"Ошибка в заглушке: {e}")
+            return None, None

@@ -1,12 +1,14 @@
+import asyncio
+
 from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
-from handlers import flower_bot
+from handlers import flowers
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    dp.include_router(flower_bot.router)
+    dp.include_router(flowers.router)
 
     print("Flower bot is ready!")
     await dp.start_polling(bot)
