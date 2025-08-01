@@ -1,5 +1,6 @@
 from aiogram import Router, types
 from aiogram.filters import CommandStart
+from aiogram.types import FSInputFile
 from model.classifier import predict, plant_info
 import os
 
@@ -36,7 +37,25 @@ async def handle_photo(message: types.Message):
             f"📅 {info['season']}\n"
             f"💡 {info['uses']}"
         )
-    else:
-        text = "❌ Не удалось распознать растение. Попробуй другое фото."
 
-    await message.answer(text, parse_mode="Markdown")
+        image_path = info["image_path"]
+        print(f"🖼️ Отправляю фото: {image_path}")
+
+        if not os.path.exists(image_path):
+            print(f"❌ Файл не найден: {image_path}")
+            await message.answer(text, parse_mode="Markdown")
+            return
+
+        photo = FSInputFile(image_path)
+
+        try:
+            await message.answer_photo(
+                photo=photo,
+                caption=text,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print(f"❌ Ошибка при отправке фото: {e}")
+            await message.answer(text, parse_mode="Markdown")
+    else:
+        await message.answer("❌ Не удалось распознать растение. Попробуй другое фото.")
