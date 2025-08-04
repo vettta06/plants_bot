@@ -49,5 +49,5 @@ for epoch in range(10):
 
     print(f"Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}")
 
-torch.save(model.state_dict(), "model/model.pth")
+torch.save(model.state_dict(), "model.pth")
 print("Обучение завершено. Веса сохранены.")
