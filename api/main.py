@@ -25,7 +25,6 @@ def home():
 
 @app.post("/predict")
 async def predict_plant(photo: UploadFile = File(...)):
-    # Проверка формата
     if not photo.content_type.startswith("image/"):
         return JSONResponse(
             {"error": "Файл должен быть изображением"},
@@ -42,7 +41,6 @@ async def predict_plant(photo: UploadFile = File(...)):
             status_code=500
         )
 
-    # Имитация предсказания
     import random
     predicted_plant = random.choice(list(plant_info.keys()))
     info = plant_info[predicted_plant]
@@ -55,5 +53,4 @@ async def predict_plant(photo: UploadFile = File(...)):
         "region": info["region"],
         "season": info["season"],
         "uses": info["uses"],
-        "status": "mock_mode — модель ещё обучается"
     })

@@ -1,13 +1,22 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 import json
 import os
-import random  # для заглушки
+import random
 
-MODEL_PATH = "model/model.pth"
+MODEL_PATH = Path(__file__).parent / "model.pth"
 INFO_PATH = "data/plants_info.json"
+CLASSES_PATH = Path(__file__).parent.parent / "data" / "classes.json"
+
+with open(INFO_PATH, "r", encoding="utf-8") as f:
+    plant_info = json.load(f)
+
+with open(CLASSES_PATH, "r", encoding="utf-8") as f:
+    class_names = json.load(f)
 
 transform = transforms.Compose([
     transforms.Resize(256),
@@ -16,8 +25,6 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-with open(INFO_PATH, "r", encoding="utf-8") as f:
-    plant_info = json.load(f)
 
 plant_names = list(plant_info.keys())
 
@@ -34,11 +41,11 @@ try:
     model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
     model.eval()
     model_loaded = True
-    print("✅ Модель загружена.")
+    print("Модель загружена.")
 except FileNotFoundError:
-    print("⚠️ Файл модели model.pth не найден. Работаю в режиме заглушки.")
+    print("Файл модели model.pth не найден. Работаю в режиме заглушки.")
 except Exception as e:
-    print(f"⚠️ Ошибка загрузки модели: {e}. Работаю в режиме заглушки.")
+    print(f"Ошибка загрузки модели: {e}. Работаю в режиме заглушки.")
 
 def predict(image_path):
     if model_loaded:
@@ -50,7 +57,7 @@ def predict(image_path):
                 outputs = model(image_t)
                 _, predicted = torch.max(outputs, 1)
                 class_idx = predicted.item()
-                class_name = list(plant_info.keys())[class_idx]
+                class_name = class_names[class_idx]
 
             return class_name, plant_info[class_name]["latin"]
         except Exception as e:

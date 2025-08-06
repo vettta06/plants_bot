@@ -51,3 +51,4 @@ for epoch in range(10):
 
 torch.save(model.state_dict(), "model.pth")
 print("Обучение завершено. Веса сохранены.")
+print("лассы в датасете:", train_dataset.classes)
